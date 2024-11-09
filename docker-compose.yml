@@ -1,0 +1,54 @@
+networks:
+  demo:
+    external: true
+services:
+  keycloak:
+    image: keycloak/keycloak
+    ports:
+      - "9990:8080"
+    networks:
+      - demo
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_ADMIN=admin
+      - DB_VENDOR=postgres
+      - DB_ADDR=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=example
+      - ROOT_LOGLEVEL=DEBUG
+      - KEYCLOAK_LOGLEVEL=DEBUG
+    command:
+      - start-dev
+    depends_on:
+      - postgres
+    volumes:
+      - keycloak:/opt/keycloak/data/
+    restart: always
+
+  postgres:
+    image: postgres
+    command: postgres -c 'max_connections=100'
+    shm_size: 128mb
+    networks:
+      - demo
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - demo_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  demo_postgres:
+    driver: local
+  keycloak:
+    driver: local
